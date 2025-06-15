@@ -5,6 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vector DB Chat</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    #chatbox {
+      position: fixed;
+      bottom: 0;
+      right: 20px;
+      width: 350px;
+      max-height: 500px;
+      background-color: #f8f9fa;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+    }
+    #chat-log {
+      height: 250px;
+      overflow-y: auto;
+      padding: 10px;
+      background: #fff;
+      border-radius: 10px 10px 0 0;
+    }
+    #chat-table {
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
   <div class="container mt-5">
@@ -14,12 +38,20 @@
       <button class="btn btn-primary" onclick="uploadFile()">Upload</button>
     </div>
 
-    <div id="chat-section" class="mt-4" style="display:none;">
-      <div class="card p-3 mb-3" style="height: 300px; overflow-y: scroll;" id="chat-log"></div>
-      <div class="input-group">
-        <input type="text" id="chat-input" class="form-control" placeholder="Ask something...">
-        <button class="btn btn-success" onclick="sendMessage()">Send</button>
-      </div>
+    <div id="chat-table" class="mt-5 text-center" style="display:none;">
+      <h4>Document Insights</h4>
+      <table class="table table-bordered">
+        <thead><tr><th>Context</th></tr></thead>
+        <tbody id="result-table"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="chatbox" class="d-flex">
+    <div id="chat-log" class="flex-grow-1"></div>
+    <div class="input-group p-2">
+      <input type="text" id="chat-input" class="form-control" placeholder="Ask something...">
+      <button class="btn btn-success" onclick="sendMessage()">Send</button>
     </div>
   </div>
 
@@ -37,7 +69,8 @@
 
       if (response.ok) {
         document.getElementById('upload-section').style.display = 'none';
-        document.getElementById('chat-section').style.display = 'block';
+        document.getElementById('chatbox').style.display = 'flex';
+        document.getElementById('chat-table').style.display = 'block';
       }
     }
 
@@ -52,8 +85,14 @@
 
       const data = await response.json();
       const chatLog = document.getElementById('chat-log');
+      const resultTable = document.getElementById('result-table');
+
       chatLog.innerHTML += `<div class='text-end'><strong>You:</strong> ${message}</div>`;
       chatLog.innerHTML += `<div class='text-start'><strong>Bot:</strong> ${data.reply}</div>`;
+
+      // Display in table
+      resultTable.innerHTML = `<tr><td>${data.reply.replace(/\n/g, '<br>')}</td></tr>`;
+
       input.value = '';
       chatLog.scrollTop = chatLog.scrollHeight;
     }
