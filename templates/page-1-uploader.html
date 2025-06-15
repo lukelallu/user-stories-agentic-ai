@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vector DB Chat</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container mt-5">
+    <div id="upload-section" class="card p-4">
+      <h5 class="card-title">Upload Document</h5>
+      <input type="file" id="file-input" class="form-control mb-2">
+      <button class="btn btn-primary" onclick="uploadFile()">Upload</button>
+    </div>
+
+    <div id="chat-section" class="mt-4" style="display:none;">
+      <div class="card p-3 mb-3" style="height: 300px; overflow-y: scroll;" id="chat-log"></div>
+      <div class="input-group">
+        <input type="text" id="chat-input" class="form-control" placeholder="Ask something...">
+        <button class="btn btn-success" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function uploadFile() {
+      const fileInput = document.getElementById('file-input');
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('document', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        document.getElementById('upload-section').style.display = 'none';
+        document.getElementById('chat-section').style.display = 'block';
+      }
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('chat-input');
+      const message = input.value;
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      });
+
+      const data = await response.json();
+      const chatLog = document.getElementById('chat-log');
+      chatLog.innerHTML += `<div class='text-end'><strong>You:</strong> ${message}</div>`;
+      chatLog.innerHTML += `<div class='text-start'><strong>Bot:</strong> ${data.reply}</div>`;
+      input.value = '';
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+  </script>
+</body>
+</html>
