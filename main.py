@@ -19,6 +19,26 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chat_models import ChatOpenAI
 from dotenv import load_dotenv
 
+def search_documents(query: str) -> str:
+    query_embedding = model.encode([query])[0]
+    # Reduce k to 2 or 3 to limit the amount of text
+    D, I = index.search(np.array([query_embedding], dtype="float32"), k=3)
+    results = [documents[i] for i in I[0]]
+    # Optionally, truncate each chunk to a max length
+    max_chunk_length = 1000  # characters
+    results = [chunk[:max_chunk_length] for chunk in results]
+    return "\n\n".join(results) if results else "No relevant content found."
+
+from langchain.agents import Tool
+
+tools = [
+    Tool(
+        name="DocumentSearch",
+        func=search_documents,
+        description="Searches the uploaded documents for relevant information."
+    )
+]
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -50,7 +70,7 @@ class ChatRequest(BaseModel):
     message: str
 
 # Set up memory for conversation
-memory = ConversationBufferMemory(memory_key="chat_history")
+memory = ConversationBufferMemory(memory_key="chat_history", k=3)  # Only keep last 3 exchanges
 
 # Set up OpenAI chat model with API key from environment
 openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -58,7 +78,7 @@ llm = ChatOpenAI(temperature=0, openai_api_key=openai_api_key)
 
 # Create agent using initialize_agent (not wrapping in AgentExecutor manually)
 agent_executor = initialize_agent(
-    tools=[],
+    tools=tools,  # <-- Now using your tool
     llm=llm,
     agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
     verbose=True,
